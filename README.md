@@ -5,6 +5,9 @@ pseudocódigo diseñado a mano. Este documento explica el razonamiento completo:
 qué hace cada parte, por qué se tomó cada decisión, y qué hubo que arreglar al
 pasar de pseudocódigo a código real.
 
+El código fuente lleva solo los comentarios imprescindibles —los que explican
+decisiones que no se deducen leyéndolo—. Todo lo demás está aquí.
+
 ---
 
 ## 1. El problema
@@ -130,9 +133,11 @@ algo?», «sacar»— y eso es la definición de una cola FIFO.
 std::queue<int> B[10];
 ```
 
-`std::queue` expone solo `push`, `front`, `pop` y `empty`. Nada más. No hay
-sufijos `_front` / `_back` que leer en cada línea, y no existe ninguna operación
-capaz de romper el FIFO.
+La garantía que da `std::queue` es la que importa: de todo lo que expone, solo
+**dos operaciones mueven datos** — `push`, que siempre inserta por atrás, y
+`pop`, que siempre saca por delante. No hay forma de sacar por el otro extremo
+ni de insertar en medio, así que el FIFO no se puede romper por accidente. Y no
+hay sufijos `_front` / `_back` que leer en cada línea.
 
 ### El problema de `vector`
 
@@ -232,8 +237,8 @@ dígitos no es más que una matriz de n filas × 1 columna:
 countingSort(comoMatriz(A), 0);
 ```
 
-`comoMatriz()` y `comoLista()` viven en `main.cpp` y no contienen algoritmo
-alguno: solo convierten de ida y vuelta.
+`comoMatriz()`, `comoLista()` y `ordenarLista()` viven en `main.cpp` y no
+contienen algoritmo alguno: solo convierten de ida y vuelta.
 
 ### Qué cambió respecto del pseudocódigo original
 
@@ -264,8 +269,8 @@ conservan su orden relativo original.
 El Counting Sort de aquí es estable porque:
 
 - las filas entran al casillero con `push`, **en orden de aparición**
-- y salen por el frente con `front` + `pop`, o sea **FIFO**: el primero que entró es el primero
-  que sale
+- y salen por el frente con `front` + `pop`, o sea **FIFO**: el primero que
+  entró es el primero que sale
 
 ¿Por qué importa? Porque el Radix ordena por la columna 4 y *después* por la
 columna 3. Si la segunda pasada no fuera estable, destruiría por completo el
@@ -303,7 +308,9 @@ for (int columna = cols - 1; columna >= 0; columna--) {
 }
 ```
 
-Cinco líneas. Es lo que se buscaba.
+Tres líneas. Toda la función son once, contando el caso de la matriz vacía y la
+copia inicial. Es lo que se buscaba: Radix no reimplementa nada, solo elige el
+orden de las pasadas.
 
 ---
 
@@ -351,9 +358,9 @@ eda-radix/
 │   ├── counting_sort.hpp
 │   └── radix_sort.hpp
 └── src/
-    ├── counting_sort.cpp     # la unica version: sobre matrices
-    ├── radix_sort.cpp        # el bucle de 5 líneas
-    └── main.cpp              # pruebas y verificación
+    ├── counting_sort.cpp     # la única versión: sobre matrices
+    ├── radix_sort.cpp        # solo el bucle de pasadas
+    └── main.cpp              # conversión lista↔matriz, pruebas y verificación
 ```
 
 ### Compilar y ejecutar
@@ -432,7 +439,21 @@ llenara nada pasaría el test. Por eso cada prueba comprueba **dos** cosas:
 | La salida está ordenada | recorrido lineal comparando vecinos |
 | La salida tiene los mismos elementos que la entrada | histograma de los 10 dígitos (Parte 1) / emparejamiento de filas (Parte 2) |
 
-Compilado y verificado con `g++ -Wall -Wextra`, sin warnings.
+### Verificación adicional
+
+Compila con `g++ -Wall -Wextra` sin un solo warning. Además se comprobó con los
+sanitizers, que detectan accesos fuera de rango y comportamiento indefinido que
+una ejecución normal no muestra:
+
+```bash
+g++ -std=c++17 -Wall -Wextra -Iinclude -fsanitize=address,undefined -g \
+    src/*.cpp -o radix_san && ./radix_san
+```
+
+Sale limpio. Vale la pena saber que el único punto frágil es `B[M[i][col]]`: no
+valida el rango, así que un valor fuera de 0–9 sería un acceso fuera de límites.
+El enunciado garantiza dígitos, de modo que está fuera del contrato de la
+función, pero un `assert` lo dejaría documentado.
 
 ---
 
