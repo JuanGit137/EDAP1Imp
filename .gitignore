@@ -1,0 +1,6 @@
+# Binario que genera "make"
+radix
+
+# Objetos y binarios de depuracion / sanitizers
+*.o
+radix_san

@@ -5,9 +5,8 @@
 #include <string>
 #include <vector>
 
-// ------------------------------------------------------------
-// Utilidades de impresion y verificacion
-// ------------------------------------------------------------
+// ---------- impresion ----------
+
 void imprimirLista(const std::string& etiqueta, const std::vector<int>& v) {
     std::cout << etiqueta;
     for (int x : v) std::cout << x << " ";
@@ -20,6 +19,8 @@ void imprimirMatriz(const std::vector<std::vector<int>>& M) {
         std::cout << "\n";
     }
 }
+
+// ---------- verificacion ----------
 
 bool listaOrdenada(const std::vector<int>& v) {
     for (size_t i = 0; i + 1 < v.size(); i++) {
@@ -40,32 +41,90 @@ bool matrizOrdenada(const std::vector<std::vector<int>>& M) {
     return true;
 }
 
-void chequear(const std::string& nombre, bool ok) {
-    std::cout << "[" << (ok ? "OK  " : "FALLA") << "] " << nombre << "\n";
+std::vector<int> histograma(const std::vector<int>& v) {
+    std::vector<int> h(10, 0);
+    for (int x : v) h[x]++;
+    return h;
 }
 
-// ------------------------------------------------------------
+// Verificar solo el ORDEN no basta: {0,0,0,...} tambien esta ordenado, y el
+// vector de salida se inicializa en ceros, asi que un countingSort que no
+// llenara nada pasaria el test. Hay que exigir tambien mismo contenido.
+bool ordenaBien(const std::vector<int>& entrada, const std::vector<int>& salida) {
+    return listaOrdenada(salida)
+        && entrada.size() == salida.size()
+        && histograma(entrada) == histograma(salida);
+}
+
+// Mismo agujero en la Parte 2. Es un VERIFICADOR, no parte del algoritmo:
+// aqui el O(n^2) da igual.
+bool mismasFilas(const std::vector<std::vector<int>>& M,
+                 const std::vector<std::vector<int>>& Mf) {
+    if (M.size() != Mf.size()) return false;
+    std::vector<bool> usada(M.size(), false);
+    for (const auto& fila : Mf) {
+        bool encontrada = false;
+        for (size_t i = 0; i < M.size() && !encontrada; i++) {
+            if (!usada[i] && M[i] == fila) {
+                usada[i] = true;
+                encontrada = true;
+            }
+        }
+        if (!encontrada) return false;
+    }
+    return true;
+}
+
+// ---------- Parte 1 con la funcion de la Parte 2 ----------
+//
+// Una lista de n digitos es una matriz de n x 1, asi que se ordena con el
+// mismo countingSort usando col = 0. Aqui solo hay conversion, no algoritmo.
+
+std::vector<std::vector<int>> comoMatriz(const std::vector<int>& v) {
+    std::vector<std::vector<int>> M;
+    for (int x : v) M.push_back({x});
+    return M;
+}
+
+std::vector<int> comoLista(const std::vector<std::vector<int>>& M) {
+    std::vector<int> v;
+    for (const auto& fila : M) v.push_back(fila[0]);
+    return v;
+}
+
+std::vector<int> ordenarLista(const std::vector<int>& v) {
+    return comoLista(sort::countingSort(comoMatriz(v), 0));
+}
+
+// Se cuenta para devolverlo como codigo de salida al final de main().
+int fallas = 0;
+
+void chequear(const std::string& nombre, bool ok) {
+    std::cout << "[" << (ok ? "OK  " : "FALLA") << "] " << nombre << "\n";
+    if (!ok) fallas++;
+}
+
 int main() {
     std::cout << "=== PARTE 1: Counting Sort sobre lista ===\n\n";
 
     std::vector<int> A = {5, 3, 9, 0, 3, 7, 1, 9, 2};
-    std::vector<int> Af = sort::countingSort(A);
+    std::vector<int> Af = ordenarLista(A);
     imprimirLista("Entrada:  ", A);
     imprimirLista("Salida:   ", Af);
-    chequear("caso general", listaOrdenada(Af));
+    chequear("caso general", ordenaBien(A, Af));
 
     // Casos borde
     std::vector<int> iguales = {4, 4, 4, 4, 4, 4, 4, 4, 4};
-    chequear("todos iguales", listaOrdenada(sort::countingSort(iguales)));
+    chequear("todos iguales", ordenaBien(iguales, ordenarLista(iguales)));
 
     std::vector<int> descendente = {9, 8, 7, 6, 5, 4, 3, 2, 1};
-    chequear("orden inverso", listaOrdenada(sort::countingSort(descendente)));
+    chequear("orden inverso", ordenaBien(descendente, ordenarLista(descendente)));
 
     std::vector<int> extremos = {0, 9, 0, 9, 0, 9, 0, 9, 0};
-    chequear("solo 0 y 9", listaOrdenada(sort::countingSort(extremos)));
+    chequear("solo 0 y 9", ordenaBien(extremos, ordenarLista(extremos)));
 
     std::vector<int> vacia = {};
-    chequear("lista vacia", listaOrdenada(sort::countingSort(vacia)));
+    chequear("lista vacia", ordenaBien(vacia, ordenarLista(vacia)));
 
     std::cout << "\n=== PARTE 2: Radix Sort sobre matriz 9x5 ===\n\n";
 
@@ -90,24 +149,38 @@ int main() {
     imprimirMatriz(R);
 
     std::cout << "\n";
-    chequear("matriz ordenada", matrizOrdenada(R));
+    chequear("matriz ordenada", matrizOrdenada(R) && mismasFilas(M, R));
 
-    // Verificar una pasada aislada de countingSort por columna
+    // Una pasada aislada de countingSort por columna
     std::vector<std::vector<int>> unaPasada = sort::countingSort(M, 4);
-    bool colOk = true;
+    bool colOk = mismasFilas(M, unaPasada);
     for (size_t f = 0; f + 1 < unaPasada.size(); f++) {
         if (unaPasada[f][4] > unaPasada[f + 1][4]) colOk = false;
     }
     chequear("una pasada por columna 4", colOk);
 
-    // Verificar ESTABILIDAD: las tres filas 32109 / 32108 / 32109 deben
-    // conservar su orden relativo tras ordenar por una columna donde empatan.
-    // Columna 0: las filas 0, 3 y 7 tienen todas el digito 3, y son las
-    // unicas con ese digito. Antes van 1 fila con 0 y 2 filas con 1,
-    // asi que deben quedar en las posiciones 3, 4 y 5, en ese mismo orden.
-    std::vector<std::vector<int>> estable = sort::countingSort(M, 0);
-    bool estOk = (estable[3] == M[0] && estable[4] == M[3] && estable[5] == M[7]);
+    // ESTABILIDAD. Las filas que empatan tienen que ser DISTINGUIBLES entre
+    // si, o el test no sirve: si dos son identicas, intercambiarlas no cambia
+    // nada y un algoritmo inestable pasaria igual. Estas tres empatan en la
+    // columna 0 pero llevan marca distinta en el ultimo digito.
+    std::vector<std::vector<int>> conEmpates = {
+        {4, 0, 0, 0, 1},   // marca 1
+        {2, 9, 9, 9, 9},
+        {4, 0, 0, 0, 2},   // marca 2
+        {1, 1, 1, 1, 1},
+        {4, 0, 0, 0, 3}    // marca 3
+    };
+
+    // Ordenado por la columna 0 quedan: el 1, el 2, y las tres del 4 en su
+    // orden de aparicion -> posiciones 2, 3 y 4.
+    std::vector<std::vector<int>> estable = sort::countingSort(conEmpates, 0);
+    bool estOk = (estable[2] == conEmpates[0] &&
+                  estable[3] == conEmpates[2] &&
+                  estable[4] == conEmpates[4]);
     chequear("estabilidad (empates conservan orden)", estOk);
 
-    return 0;
+    std::cout << "\n" << (fallas == 0
+                          ? "Todas las pruebas pasaron.\n"
+                          : "PRUEBAS FALLIDAS: " + std::to_string(fallas) + "\n");
+    return fallas == 0 ? 0 : 1;
 }
