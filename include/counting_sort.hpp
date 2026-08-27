@@ -13,7 +13,7 @@ using Matriz = std::vector<std::vector<int>>;
 // Cubre las dos partes del enunciado: una lista de n digitos es una matriz
 // de n x 1, y se ordena con col = 0.
 //
-// Complejidad: O(n * COLS + k) -> O(n), con COLS y k constantes.
+// Complejidad: O(n*d + k) -> O(n), con d (columnas) y k (digitos) constantes.
 Matriz countingSort(const Matriz& M, int col);
 
 #endif

@@ -9,9 +9,7 @@ Matriz countingSort(const Matriz& M, int col) {
     int n = static_cast<int>(M.size());
     Matriz Mf(n);
 
-    // Cada casillero es una cola FIFO. Sacar del frente es O(1); con vector
-    // habria que usar erase(begin()) y en el peor caso (todos los digitos
-    // iguales, todo en un casillero) degeneraria a O(n^2).
+    // Cada casillero es una cola FIFO. Sacar del frente es O(1)
     std::queue<int> B[K];
 
     // Se guarda el INDICE de la fila, no el digito: eso es lo que permite
@@ -28,7 +26,7 @@ Matriz countingSort(const Matriz& M, int col) {
             int fila = B[i].front();
             B[i].pop();
 
-            Mf[p] = M[fila];   // copiar una fila es O(COLS) = constante
+            Mf[p] = M[fila];   // copiar una fila es O(d) = constante
             p = p + 1;
         } else {
             i = i + 1;         // casillero vacio -> pasar al siguiente
