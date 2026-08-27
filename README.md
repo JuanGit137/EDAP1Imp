@@ -221,8 +221,24 @@ Ventajas adicionales:
   versión de matrices sirve también para listas sin escribir nada nuevo (ver
   sección 6).
 
-Los parámetros van como `const vector<...>&` para evitar copiar la entrada al
-entrar a la función.
+Los parámetros van como `const Matriz&`: la referencia evita copiar la entrada
+al entrar a la función, y `const` deja escrito que no se modifica.
+
+### El alias `Matriz`
+
+`std::vector<std::vector<int>>` aparecía en cada firma y las partía en dos
+renglones. Una línea lo arregla:
+
+```cpp
+using Matriz = std::vector<std::vector<int>>;
+
+Matriz countingSort(const Matriz& M, int col);
+Matriz radixSort(const Matriz& M);
+```
+
+`using` no crea un tipo nuevo, solo un nombre más corto para el mismo: no
+cambia nada en tiempo de ejecución. Ahora las firmas caben en una línea y se
+leen como lo que son — *recibe una matriz, devuelve una matriz*.
 
 ---
 
@@ -286,14 +302,12 @@ Ejemplo concreto. Al ordenar por la columna 0, las tres filas `32109`, `32108` y
 el mismo orden relativo en que estaban — que es el orden que las pasadas por las
 columnas 4, 3, 2 y 1 ya habían dejado correcto.
 
-Para *verificar* la estabilidad hace falta un cuidado extra: las filas que
-empatan tienen que ser **distinguibles entre sí**. En la matriz de ejemplo dos de
-esas tres filas son idénticas (`32109` está repetida), así que un algoritmo
-inestable que las intercambiara produciría exactamente la misma salida y el test
-no vería nada. Por eso el test `estabilidad (empates conservan orden)` usa una
-matriz aparte, donde las tres filas que empatan llevan una marca distinta en el
-último dígito (1, 2 y 3): cualquier alteración del orden relativo se vuelve
-visible.
+Un aviso por si quieres comprobarlo a mano: las filas que empatan tienen que ser
+**distinguibles entre sí** o no verás nada. En la matriz de ejemplo dos de esas
+tres filas son idénticas (`32109` está repetida), así que un algoritmo inestable
+que las intercambiara produciría exactamente la misma salida. Para verlo de
+verdad hacen falta filas que empaten en la columna pero se diferencien en otra —
+por ejemplo `40001`, `40002`, `40003`, que deben salir siempre en ese orden.
 
 ---
 
@@ -355,12 +369,12 @@ eda-radix/
 ├── Makefile
 ├── README.md
 ├── include/
-│   ├── counting_sort.hpp
-│   └── radix_sort.hpp
+│   ├── counting_sort.hpp    # el alias Matriz + countingSort
+│   └── radix_sort.hpp       # radixSort
 └── src/
     ├── counting_sort.cpp     # la única versión: sobre matrices
     ├── radix_sort.cpp        # solo el bucle de pasadas
-    └── main.cpp              # conversión lista↔matriz, pruebas y verificación
+    └── main.cpp              # conversión lista↔matriz y demostración
 ```
 
 ### Compilar y ejecutar
@@ -384,11 +398,6 @@ g++ -std=c++17 -Iinclude src/*.cpp -o radix && ./radix
 
 Entrada:  5 3 9 0 3 7 1 9 2
 Salida:   0 1 2 3 3 5 7 9 9
-[OK  ] caso general
-[OK  ] todos iguales
-[OK  ] orden inverso
-[OK  ] solo 0 y 9
-[OK  ] lista vacia
 
 === PARTE 2: Radix Sort sobre matriz 9x5 ===
 
@@ -413,33 +422,9 @@ Despues:
 54321
 77776
 99999
-
-[OK  ] matriz ordenada
-[OK  ] una pasada por columna 4
-[OK  ] estabilidad (empates conservan orden)
-
-Todas las pruebas pasaron.
 ```
 
-El programa devuelve **código de salida 0 si todo pasa y 1 si algo falla**, así
-que `make run` sirve para automatizar:
-
-```bash
-make run && echo "verde"
-```
-
-### Qué verifica cada prueba
-
-No basta con comprobar que la salida esté ordenada: el vector de salida se crea
-inicializado en ceros, y `{0,0,0,…}` también está ordenado — un algoritmo que no
-llenara nada pasaría el test. Por eso cada prueba comprueba **dos** cosas:
-
-| Comprobación | Cómo |
-|---|---|
-| La salida está ordenada | recorrido lineal comparando vecinos |
-| La salida tiene los mismos elementos que la entrada | histograma de los 10 dígitos (Parte 1) / emparejamiento de filas (Parte 2) |
-
-### Verificación adicional
+### Verificación
 
 Compila con `g++ -Wall -Wextra` sin un solo warning. Además se comprobó con los
 sanitizers, que detectan accesos fuera de rango y comportamiento indefinido que

@@ -1,16 +1,13 @@
 #include "counting_sort.hpp"
 #include <queue>
 
-namespace sort {
-
 // Rango de un digito: 0..9 -> 10 casilleros. Es CONSTANTE, y por eso el
 // algoritmo se mantiene en O(n).
 static const int K = 10;
 
-std::vector<std::vector<int>> countingSort(const std::vector<std::vector<int>>& M,
-                                           int col) {
+Matriz countingSort(const Matriz& M, int col) {
     int n = static_cast<int>(M.size());
-    std::vector<std::vector<int>> Mf(n);
+    Matriz Mf(n);
 
     // Cada casillero es una cola FIFO. Sacar del frente es O(1); con vector
     // habria que usar erase(begin()) y en el peor caso (todos los digitos
@@ -40,5 +37,3 @@ std::vector<std::vector<int>> countingSort(const std::vector<std::vector<int>>& 
 
     return Mf;
 }
-
-} // namespace sort

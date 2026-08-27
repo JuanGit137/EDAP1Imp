@@ -3,7 +3,8 @@
 
 #include <vector>
 
-namespace sort {
+// Cada fila es un numero, cada columna uno de sus digitos.
+using Matriz = std::vector<std::vector<int>>;
 
 // Ordena las FILAS de M segun el digito de la columna 'col', moviendo la
 // fila completa. Es ESTABLE: las filas que empatan conservan su orden
@@ -13,9 +14,6 @@ namespace sort {
 // de n x 1, y se ordena con col = 0.
 //
 // Complejidad: O(n * COLS + k) -> O(n), con COLS y k constantes.
-std::vector<std::vector<int>> countingSort(const std::vector<std::vector<int>>& M,
-                                           int col);
-
-} // namespace sort
+Matriz countingSort(const Matriz& M, int col);
 
 #endif
